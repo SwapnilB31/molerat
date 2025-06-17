@@ -1,4 +1,7 @@
 # molerat
+<div style="width: 100%; display: flex; justify-content: center; margin-bottom: 1rem"> 
+<img src="assets/logo.png" width=200 height=200/>
+</div>
 
 **molerat** is a Python utility for synchronizing code between directories and promoting dependencies to sub-projects. It is especially useful for monorepos or multi-module Python projects where shared code and dependencies need to be kept in sync across multiple modules or packages.
 

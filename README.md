@@ -153,7 +153,48 @@ You can configure `molerat.json` to sync the `shared` folder into each lambda an
 }
 ```
 
-### Entrypoint and Tree Shaking
+## Why Build Context Size Matters (and How molerat Helps)
+
+When building container images (for example, for AWS Lambda or ECS Tasks), the size of the Docker build context can have a major impact on build performance and CI resource usage — even if you’re using multistage builds or trimming the final image.
+
+What Happens During docker build:
+
+- Before any Dockerfile stages run, the Docker client packages up the entire build context (usually the folder where you run docker build .) and sends it to the Docker daemon.
+- This includes all files — unless explicitly excluded via .dockerignore.
+- The larger the context:
+    - The longer this step takes (especially on networked Docker daemons or remote builders)
+    - The more CPU and memory it uses on the CI runner or local machine
+    - The higher the chance of cache invalidation (which forces rebuilds)
+
+### Typical Pitfall with Shared Code in Monorepos
+In a monorepo, developers often set PYTHONPATH or copy the entire repo as part of the Docker build context — in order to make shared modules available to microservices:
+
+```Dockerfile
+# Example of bloated context
+COPY . /app
+```
+This approach works, but causes:
+- Slower build times
+- More memory usage during builds
+- Bloated CI resource usage (which affects parallelism and cost)
+- Risk of accidentally copying unwanted files (which can inflate image layers)
+
+**How molerat Helps**:
+- Targeted sync: molerat copies only the shared code required by each service (plus its dependencies) into the service folder.
+- Minimal build context: Now, each service can use a small, clean build context — only what’s actually needed:
+
+```Dockerfile
+#With molerat
+COPY shared/ /app/shared
+COPY app.py /app/app.py
+```
+
+When It Matters
+	- In small projects, these savings may not be noticeable.
+	- In large monorepos (or if you’re running CI/CD on metered runners), keeping the build context lean can dramatically reduce both build times and CI costs.
+
+
+## Entrypoint and Tree Shaking
 
 The `entrypoint` config is used by an upcoming tree shaker module in molerat. This module will perform dead code elimination and tree shaking inside the synced `shared` folder, ensuring only the code actually used by each sub-project/workspace is included in the final package.
 

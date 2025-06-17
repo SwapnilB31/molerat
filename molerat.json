@@ -1,0 +1,15 @@
+{
+    "sync": [
+        {
+            "watch": "shared",
+            "exclude": ["__pycache__"],
+            "destinations": [
+                {
+                    "path": "module_a",
+                    "entrypoint": "module_a/mod.py",
+                    "directory": "shared"
+                }
+            ] 
+        }
+    ]
+}

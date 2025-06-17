@@ -1,0 +1,24 @@
+# Python-generated files
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+
+
+out.txt
+tree-shaker.py
+app.py
+
+module_a/
+shared/
+
+# directory "module_a/shared/" added to .gitignore by molerat
+module_a/shared/

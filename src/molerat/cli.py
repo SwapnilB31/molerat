@@ -23,6 +23,7 @@ def print_help():
         "  [yellow]--directory[/yellow]     Subdirectory in destination to sync into (optional, can be specified multiple times)\n"
         "  [yellow]--exclude[/yellow]       Exclude pattern for files/dirs (can be specified multiple times, applies to corresponding --watch)\n"
         "  [yellow]--config[/yellow]        Path to molerat.json config file (optional)\n"
+        "  [yellow]--no-watch[/yellow]      Copies the contents of source to directory once and exits\n"
         "  [yellow]-h, --help[/yellow]      Show this help message and exit\n"
         "\n[dim]If no CLI options are provided, molerat will look for a molerat.json config file in the current directory.[/dim]\n"
         "\n[dim]The --exclude option allows you to specify patterns (e.g. --exclude __pycache__) to ignore during sync.[/dim]\n"
@@ -61,6 +62,9 @@ def parse_args():
     parser.add_argument(
         "--config", type=str, help="Path to molerat.json config file", required=False
     )
+
+    parser.add_argument("-nw","--no-watch",action="store_true", help="copy to destination. do not watch and sync")
+
     parser.add_argument("-h", "--help", action="store_true", help="Show help and exit")
     return parser.parse_args()
 
@@ -69,13 +73,18 @@ def main():
     args = parse_args()
     DEFAULT_CONFIG_PATH = "molerat.json"
 
+    no_watch = False
+
+    if args.no_watch:
+        no_watch = True
+
     if args.help:
         print_help()
         return
 
     # 1. If --config is provided, use it
     if args.config:
-        sync = MoleRatFileSync(config_path=args.config)
+        sync = MoleRatFileSync(config_path=args.config, no_watch=no_watch)
         sync.run()
         return
 
@@ -83,7 +92,7 @@ def main():
     if not any([args.watch, args.destination, args.entrypoint]) and os.path.exists(
         DEFAULT_CONFIG_PATH
     ):
-        sync = MoleRatFileSync(config_path=DEFAULT_CONFIG_PATH)
+        sync = MoleRatFileSync(config_path=DEFAULT_CONFIG_PATH, no_watch=no_watch)
         sync.run()
         return
 
@@ -124,7 +133,7 @@ def main():
         sync_blocks.append(Sync(watch=watch_dir, exclude=exclude, destinations=dests))
 
     config = MoleRatConfig(sync=sync_blocks)
-    sync = MoleRatFileSync(config=config)
+    sync = MoleRatFileSync(config=config, no_watch=no_watch)
     sync.run()
 
 

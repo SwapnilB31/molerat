@@ -29,7 +29,7 @@ PYPROJECT_TOML_FILE = "pyproject.toml"
 
 
 class MoleRatFileChangeHanlder(FileSystemEventHandler):
-    __slots__ = ("source_dir", "destination", "directory","destination_dir")
+    __slots__ = ("source_dir", "destination", "directory", "destination_dir")
 
     def __init__(self, source_dir: str, destination: str, directory: str):
         self.source_dir = source_dir
@@ -52,14 +52,15 @@ class MoleRatFileChangeHanlder(FileSystemEventHandler):
             shutil.copy(event.src_path, destination_path)
 
             console.log("[blue][Info][/blue] analyzing affected dependencies")
-            MoleratDistributionSync.promote_dependencies(event.src_path, self.destination, is_directory=False)
+            MoleratDistributionSync.promote_dependencies(
+                event.src_path, self.destination, is_directory=False
+            )
 
         elif isinstance(event, FileDeletedEvent):
             console.log(
                 f"[red][File Deleted][/red] {event.src_path}. deleting file at destination: {destination_path}"
             )
             os.remove(destination_path)
-
 
 
 class MoleratDistributionResolver:
@@ -133,7 +134,8 @@ class MoleratDistributionResolver:
 
         cls._cache[import_name] = None
         return None
-    
+
+
 class MoleratDistributionSync:
     @staticmethod
     def append_to_gitignore(directory: str, cwd: str):
@@ -155,8 +157,7 @@ class MoleratDistributionSync:
     def _load_toml_file(path) -> dict:
         with open(path, "r", encoding="utf-8") as f:
             return toml.loads(f.read())
-        
-    
+
     @staticmethod
     def _update_toml_file(path, toml_obj):
         """Save the updated TOML back to disk."""
@@ -184,9 +185,11 @@ class MoleratDistributionSync:
                     installable_dev.append(i_dep)
 
         return installable, installable_dev
-    
+
     @staticmethod
-    def promote_dependencies(watch_dir: str, destination_dir: str, is_directory: bool = True):
+    def promote_dependencies(
+        watch_dir: str, destination_dir: str, is_directory: bool = True
+    ):
         # print(f"promote_dependencies called with {watch_dir=}, {destination_dir=}, {is_directory=}")
         """Analyze watch directory's imports and promote to destination's pyproject.toml."""
         if not (
@@ -215,7 +218,9 @@ class MoleratDistributionSync:
         base_toml = MoleratDistributionSync._load_toml_file(PYPROJECT_TOML_FILE)
         workspace_toml = MoleratDistributionSync._load_toml_file(workspace_pyproject)
 
-        installed, dev = MoleratDistributionSync._find_installable_deps(used_deps, base_toml)
+        installed, dev = MoleratDistributionSync._find_installable_deps(
+            used_deps, base_toml
+        )
 
         if installed:
             if "project" not in workspace_toml:
@@ -248,19 +253,21 @@ class MoleratDistributionSync:
         MoleratDistributionSync._update_toml_file(workspace_pyproject, workspace_toml)
 
 
-
 class MoleRatFileSync:
     config: Optional[MoleRatConfig]
     config_path: str
+    no_watch: bool
 
     def __init__(
         self,
         *,
+        no_watch: bool = False,
         config_path: Optional[str] = None,
         config: Optional[MoleRatConfig] = None,
     ):
         self.config_path = config_path if config_path else DEFAULT_CONFIG_PATH
         self.config = config
+        self.no_watch = no_watch
 
     def _init_config(self):
         if os.path.exists(self.config_path) and os.path.isfile(self.config_path):
@@ -318,7 +325,7 @@ class MoleRatFileSync:
                     continue
 
                 if not os.path.exists(directory):
-                    os.mkdir(directory)
+                    os.makedirs(directory, exist_ok=True)
                     console.log(
                         f"[green][Directory Created][/green]destination directory successfully created {directory}"
                     )
@@ -341,8 +348,9 @@ class MoleRatFileSync:
                 )
 
                 MoleratDistributionSync.append_to_gitignore(directory, cwd)
-                MoleratDistributionSync.promote_dependencies(sync_item.watch, destination.path)
-
+                MoleratDistributionSync.promote_dependencies(
+                    sync_item.watch, destination.path
+                )
 
     def run(self):
         console.log("[green][Init] [b]molerat[/b][/green] is starting up")
@@ -350,6 +358,10 @@ class MoleRatFileSync:
             self._init_config()
         if self.config:
             self.copy_watched_folder_to_dest()
+
+            if self.no_watch:
+                console.log("[cyan][Exit][/cyan] Exiting. --no-watch flag was enabled")
+                return
 
             console.log("[cyan][Watch][/cyan] watching files for changes")
             observers: List[BaseObserver] = []
@@ -368,7 +380,9 @@ class MoleRatFileSync:
                         if destination.directory
                         else f"{source_dir_name}"
                     )
-                    event_handler = MoleRatFileChangeHanlder(source_dir, dest_path, dest_dir)
+                    event_handler = MoleRatFileChangeHanlder(
+                        source_dir, dest_path, dest_dir
+                    )
                     observer = Observer()
                     observer.schedule(
                         event_handler,
@@ -417,4 +431,3 @@ class MoleRatFileSync:
 if __name__ == "__main__":
     sync = MoleRatFileSync()
     sync.run()
-

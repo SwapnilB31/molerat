@@ -7,7 +7,7 @@
                 {
                     "path": "module_a",
                     "entrypoint": "module_a/mod.py",
-                    "directory": "shared"
+                    "directory": "app/shared"
                 }
             ] 
         }

@@ -22,3 +22,8 @@ shared/
 
 # directory "module_a/shared/" added to .gitignore by molerat
 module_a/shared/
+
+*.log
+
+# directory "module_a/app/shared/" added to .gitignore by molerat
+module_a/app/shared/

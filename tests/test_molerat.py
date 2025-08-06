@@ -9,6 +9,7 @@ import pytest
 from molerat.config import MoleRatConfig, Sync, Destination
 from molerat.main import MoleRatFileSync, MoleratDistributionResolver
 
+
 @pytest.fixture
 def temp_project(tmp_path):
     # Setup a fake project structure
@@ -28,17 +29,20 @@ dependencies = []
 """)
     yield tmp_path
 
+
 def test_molerat_file_sync_basic(temp_project):
     # Prepare config
-    config = MoleRatConfig(sync=[
-        Sync(
-            watch="shared",
-            exclude=["skipme.py"],
-            destinations=[
-                Destination(path="module_a", entrypoint=None, directory="shared")
-            ]
-        )
-    ])
+    config = MoleRatConfig(
+        sync=[
+            Sync(
+                watch="shared",
+                exclude=["skipme.py"],
+                destinations=[
+                    Destination(path="module_a", entrypoint=None, directory="shared")
+                ],
+            )
+        ]
+    )
     cwd = os.getcwd()
     os.chdir(temp_project)
     try:
@@ -50,12 +54,14 @@ def test_molerat_file_sync_basic(temp_project):
     finally:
         os.chdir(cwd)
 
+
 def test_distribution_resolver(temp_project):
     shared = temp_project / "shared"
     resolver = MoleratDistributionResolver(str(shared))
     # Should find 'math' as a used package (even if not a real distribution)
     pkgs = resolver.resolve()
     assert "math" in pkgs or isinstance(pkgs, list)
+
 
 def test_cli_runs_with_config(tmp_path):
     # Write config file
@@ -71,7 +77,7 @@ def test_cli_runs_with_config(tmp_path):
                 "exclude": [],
                 "destinations": [
                     {"path": "module_a", "entrypoint": None, "directory": "shared"}
-                ]
+                ],
             }
         ]
     }

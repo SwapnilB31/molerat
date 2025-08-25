@@ -225,8 +225,8 @@ class MoleratDistributionSync:
         if installed:
             if "project" not in workspace_toml:
                 workspace_toml["project"] = {}
-            # if 'dependencies' not in workspace_toml['project']:
-            workspace_toml["project"]["dependencies"] = []
+            if 'dependencies' not in workspace_toml['project']:
+                workspace_toml["project"]["dependencies"] = []
 
             for dep in installed:
                 if dep not in workspace_toml["project"]["dependencies"]:
@@ -239,8 +239,8 @@ class MoleratDistributionSync:
         if dev:
             if "dependency-groups" not in workspace_toml:
                 workspace_toml["dependency-groups"] = {}
-            # if 'dev' not in workspace_toml['dependency-groups']:
-            workspace_toml["dependency-groups"]["dev"] = []
+            if 'dev' not in workspace_toml['dependency-groups']:
+                workspace_toml["dependency-groups"]["dev"] = []
 
             for dep in dev:
                 if dep not in workspace_toml["dependency-groups"]["dev"]:

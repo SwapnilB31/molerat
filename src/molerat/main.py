@@ -282,19 +282,28 @@ class MoleratDistributionSync:
                 f"[green][Success][/green] {len(dev)} dev deps promoted to {workspace_pyproject}."
             )
 
-        if "extra-dependencies-detected-by-molerat" not in workspace_toml and (len(native_deps) > 0 or len(installed_subdeps) > 0):
-            workspace_toml["extra-dependencies-detected-by-molerat"] = {}
+        console.log(f"[blue][Info]{len(native_deps)} native dependencies and {len(installed_subdeps)} sub-dependencies are being promoted[/blue]")
 
-        if len(native_deps) > 0 and "native_dependencies" not in workspace_toml["extra-dependencies-detected-by-molerat"]:
-            workspace_toml["extra-dependencies-detected-by-molerat"]["native_dependencies"] = []
-            for dep in native_deps:
-                workspace_toml["extra-dependencies-detected-by-molerat"]["native_dependencies"].append(dep)
+        if native_deps or installed_subdeps:
+            if "extra-dependencies-detected-by-molerat" not in workspace_toml:
+                workspace_toml["extra-dependencies-detected-by-molerat"] = {}
 
-        if len(installed_subdeps) > 0 and "sub-deps-absent-in--base-pyproject" not in workspace_toml["extra-dependencies-detected-by-molerat"]:
-            workspace_toml["extra-dependencies-detected-by-molerat"]["sub-deps-absent-in--base-pyproject"] = []
-            for dep_tuple in installed_subdeps:
-                dep = f"{dep_tuple[0]}=={dep_tuple[1]}"
-                workspace_toml["extra-dependencies-detected-by-molerat"]["sub-deps-absent-in--base-pyproject"].append(dep)
+            if native_deps:
+                nd_key = "native_dependencies"
+                if nd_key not in workspace_toml["extra-dependencies-detected-by-molerat"]:
+                    workspace_toml["extra-dependencies-detected-by-molerat"][nd_key] = []
+                for dep in native_deps:
+                    if dep not in workspace_toml["extra-dependencies-detected-by-molerat"][nd_key]:
+                        workspace_toml["extra-dependencies-detected-by-molerat"][nd_key].append(dep)
+
+            if installed_subdeps:
+                sd_key = "sub-deps-absent-in-base-pyproject-toml"
+                if sd_key not in workspace_toml["extra-dependencies-detected-by-molerat"]:
+                    workspace_toml["extra-dependencies-detected-by-molerat"][sd_key] = []
+                for dep_tuple in installed_subdeps:
+                    dep = f"{dep_tuple[0]}=={dep_tuple[1]}"
+                    if dep not in workspace_toml["extra-dependencies-detected-by-molerat"][sd_key]:
+                        workspace_toml["extra-dependencies-detected-by-molerat"][sd_key].append(dep)
 
         MoleratDistributionSync._update_toml_file(workspace_pyproject, workspace_toml)
 

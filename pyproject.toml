@@ -1,6 +1,6 @@
 [project]
 name = "molerat"
-version = "0.0.1"
+version = "0.0.2"
 description = "molerat is a Python utility for synchronizing code between directories and promoting dependencies to sub-projects."
 readme = "README.md"
 requires-python = ">=3.10"

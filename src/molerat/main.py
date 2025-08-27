@@ -203,8 +203,8 @@ class MoleratDistributionSync:
                     native_deps.append(dep)
                 elif dep not in installable_without_version:
                     try:
-                        exec(f"import {dep}")
-                        version = eval(f"{dep}.__version__")
+                        mod = importlib.import_module(dep)
+                        version = getattr(mod, "__version__", None)
                         installed_sub_deps.append((dep,version))
                     except (ModuleNotFoundError, Exception) as e:
                         print(e)
@@ -290,7 +290,7 @@ class MoleratDistributionSync:
             for dep in native_deps:
                 workspace_toml["extra-dependencies-detected-by-molerat"]["native_dependencies"].append(dep)
 
-        if len(installed_subdeps) > 0 and "sub-deps-absent-in--base-pyproject":
+        if len(installed_subdeps) > 0 and "sub-deps-absent-in--base-pyproject" not in workspace_toml["extra-dependencies-detected-by-molerat"]:
             workspace_toml["extra-dependencies-detected-by-molerat"]["sub-deps-absent-in--base-pyproject"] = []
             for dep_tuple in installed_subdeps:
                 dep = f"{dep_tuple[0]}=={dep_tuple[1]}"

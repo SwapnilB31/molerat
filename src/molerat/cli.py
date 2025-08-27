@@ -63,7 +63,12 @@ def parse_args():
         "--config", type=str, help="Path to molerat.json config file", required=False
     )
 
-    parser.add_argument("-nw","--no-watch",action="store_true", help="copy to destination. do not watch and sync")
+    parser.add_argument(
+        "-nw",
+        "--no-watch",
+        action="store_true",
+        help="copy to destination. do not watch and sync",
+    )
 
     parser.add_argument("-h", "--help", action="store_true", help="Show help and exit")
     return parser.parse_args()

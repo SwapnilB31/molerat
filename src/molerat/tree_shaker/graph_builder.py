@@ -4,15 +4,18 @@ from typing import List
 from dataclasses import dataclass
 from pathlib import Path
 
+
 class PythonFileNode:
     pass
+
 
 @dataclass
 class RootNode(PythonFileNode):
     retaive_path: str
     absolute_path: str
     used_imports: List[str]
-    dependencies: List['DependencyNode']
+    dependencies: List["DependencyNode"]
+
 
 @dataclass
 class DependencyNode(PythonFileNode):
@@ -20,11 +23,11 @@ class DependencyNode(PythonFileNode):
     absolute_path: str
     referenced_constructs: List[str]
     used_imports: List[str]
-    dependencies: List['DependencyNode']
+    dependencies: List["DependencyNode"]
 
 
 class DependencyGraph:
-    __slots__ = ("root")
+    __slots__ = "root"
 
     def __init__(self, root: RootNode):
         self.root = root

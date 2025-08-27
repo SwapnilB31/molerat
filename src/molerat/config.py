@@ -17,6 +17,7 @@ class Destination(BaseModel):
     entrypoint: Optional[str] = None
     directory: Optional[str] = None
 
+
 if __name__ == "__main__":
     config = {
         "sync": [
@@ -27,9 +28,9 @@ if __name__ == "__main__":
                     {
                         "path": "module_a",
                         "entrypoint": "module_a/mod.py",
-                        "directory": "app/shared"
+                        "directory": "app/shared",
                     }
-                ] 
+                ],
             }
         ]
     }

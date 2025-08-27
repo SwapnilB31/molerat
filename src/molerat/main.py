@@ -4,6 +4,8 @@ import json
 import importlib.util
 import ast
 import toml
+import sys
+import re
 from typing import List, Tuple
 from molerat.config import MoleRatConfig
 from typing import Optional
@@ -19,6 +21,8 @@ from watchdog.observers import Observer
 from watchdog.observers.api import BaseObserver
 from pathlib import Path
 from importlib.metadata import PackageNotFoundError, distribution, distributions
+from molerat.data.native_modules import native_modules_map
+
 
 
 console = Console()
@@ -170,12 +174,18 @@ class MoleratDistributionSync:
         installed: List[str] = base_toml.get("project", {}).get("dependencies", [])
         dev: List[str] = base_toml.get("dependency-groups", {}).get("dev", [])
 
+        python_sys_version = sys.version
+        python_version = re.match("^\d{1,2}\.\d{2,3}",sys.version)[0]
+        native_modules_list = native_modules_map.get(python_version)
+
+        installable_without_version: List[str] = []
         installable: List[str] = []
 
         for dep in used:
             for i_dep in installed:
                 if i_dep.startswith(dep):
                     installable.append(i_dep)
+                    installable_without_version.append(dep)
 
         installable_dev: List[str] = []
 
@@ -184,7 +194,24 @@ class MoleratDistributionSync:
                 if i_dep.startswith(dep):
                     installable_dev.append(i_dep)
 
-        return installable, installable_dev
+        native_deps: List[str] = []
+        installed_sub_deps: List[Tuple[str,str]] = []
+
+        if native_modules_list:
+            for dep in used:
+                if dep in native_modules_list:
+                    native_deps.append(dep)
+                elif dep not in installable_without_version:
+                    try:
+                        exec(f"import {dep}")
+                        version = eval(f"{dep}.__version__")
+                        installed_sub_deps.append((dep,version))
+                    except (ModuleNotFoundError, Exception) as e:
+                        print(e)
+                        console.log(f"[yellow][Warning] could not resolve dependency {dep}.[/yellow]")
+            pass
+
+        return installable, installable_dev, native_deps, installed_sub_deps
 
     @staticmethod
     def promote_dependencies(
@@ -218,17 +245,22 @@ class MoleratDistributionSync:
         base_toml = MoleratDistributionSync._load_toml_file(PYPROJECT_TOML_FILE)
         workspace_toml = MoleratDistributionSync._load_toml_file(workspace_pyproject)
 
-        installed, dev = MoleratDistributionSync._find_installable_deps(
+        installed, dev, native_deps, installed_subdeps = MoleratDistributionSync._find_installable_deps(
             used_deps, base_toml
         )
 
         if installed:
             if "project" not in workspace_toml:
                 workspace_toml["project"] = {}
-            if 'dependencies' not in workspace_toml['project']:
+            if "dependencies" not in workspace_toml["project"]:
                 workspace_toml["project"]["dependencies"] = []
 
             for dep in installed:
+                if dep not in workspace_toml["project"]["dependencies"]:
+                    workspace_toml["project"]["dependencies"].append(dep)
+
+            for dep_tuple in installed_subdeps:
+                dep = f"{dep_tuple[0]}=={dep_tuple[1]}"
                 if dep not in workspace_toml["project"]["dependencies"]:
                     workspace_toml["project"]["dependencies"].append(dep)
 
@@ -239,7 +271,7 @@ class MoleratDistributionSync:
         if dev:
             if "dependency-groups" not in workspace_toml:
                 workspace_toml["dependency-groups"] = {}
-            if 'dev' not in workspace_toml['dependency-groups']:
+            if "dev" not in workspace_toml["dependency-groups"]:
                 workspace_toml["dependency-groups"]["dev"] = []
 
             for dep in dev:
@@ -249,6 +281,20 @@ class MoleratDistributionSync:
             console.log(
                 f"[green][Success][/green] {len(dev)} dev deps promoted to {workspace_pyproject}."
             )
+
+        if "extra-dependencies-detected-by-molerat" not in workspace_toml and (len(native_deps) > 0 or len(installed_subdeps) > 0):
+            workspace_toml["extra-dependencies-detected-by-molerat"] = {}
+
+        if len(native_deps) > 0 and "native_dependencies" not in workspace_toml["extra-dependencies-detected-by-molerat"]:
+            workspace_toml["extra-dependencies-detected-by-molerat"]["native_dependencies"] = []
+            for dep in native_deps:
+                workspace_toml["extra-dependencies-detected-by-molerat"]["native_dependencies"].append(dep)
+
+        if len(installed_subdeps) > 0 and "sub-deps-absent-in--base-pyproject":
+            workspace_toml["extra-dependencies-detected-by-molerat"]["sub-deps-absent-in--base-pyproject"] = []
+            for dep_tuple in installed_subdeps:
+                dep = f"{dep_tuple[0]}=={dep_tuple[1]}"
+                workspace_toml["extra-dependencies-detected-by-molerat"]["sub-deps-absent-in--base-pyproject"].append(dep)
 
         MoleratDistributionSync._update_toml_file(workspace_pyproject, workspace_toml)
 

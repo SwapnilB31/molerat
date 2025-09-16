@@ -456,21 +456,21 @@ class MoleRatFileSync:
                         f"[cyan][Watch][/cyan] Watching for changes at {source_dir}. Sync setup to {dest_dir}"
                     )
 
-                for obs in observers:
-                    obs.start()
+            for obs in observers:
+                obs.start()
 
-                try:
-                    while True:
-                        continue
-                except KeyboardInterrupt:
-                    console.log(
-                        "\n[yellow][Interrupt Ctrl+C] keyboard Interrupt detected[/yellow]. shutting down..."
-                    )
-                    for obs in observers:
-                        obs.stop()
-
+            try:
+                while True:
+                    continue
+            except KeyboardInterrupt:
+                console.log(
+                    "\n[yellow][Interrupt Ctrl+C] keyboard Interrupt detected[/yellow]. shutting down..."
+                )
                 for obs in observers:
-                    obs.join()
+                    obs.stop()
+
+            for obs in observers:
+                obs.join()
 
         else:
             console.log(
